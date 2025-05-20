@@ -50,4 +50,3 @@ export default function handler(req, res) {
     res.status(500).json({ error: '內部錯誤', details: err.message });
   }
 }
-
