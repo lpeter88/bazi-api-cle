@@ -1,52 +1,44 @@
-export default function handler(req, res) {
-  try {
-    const { year, month, day } = req.query;
+import { toLunar, getGanzhi } from 'lunar-javascript'
+import { NextResponse } from 'next/server'
 
-    if (!year || !month || !day) {
-      return res.status(400).json({ error: '缺少 year、month 或 day 參數' });
-    }
+const ganzhi60 = [
+  '甲子', '乙丑', '丙寅', '丁卯', '戊辰', '己巳', '庚午', '辛未', '壬申', '癸酉',
+  '甲戌', '乙亥', '丙子', '丁丑', '戊寅', '己卯', '庚辰', '辛巳', '壬午', '癸未',
+  '甲申', '乙酉', '丙戌', '丁亥', '戊子', '己丑', '庚寅', '辛卯', '壬辰', '癸巳',
+  '甲午', '乙未', '丙申', '丁酉', '戊戌', '己亥', '庚子', '辛丑', '壬寅', '癸卯',
+  '甲辰', '乙巳', '丙午', '丁未', '戊申', '己酉', '庚戌', '辛亥', '壬子', '癸丑',
+  '甲寅', '乙卯', '丙辰', '丁巳', '戊午', '己未', '庚申', '辛酉', '壬戌', '癸亥'
+]
 
-    // 補零格式：例如 3 → "03"
-    const pad = (num) => String(num).padStart(2, '0');
+export async function GET(req) {
+  const { searchParams } = new URL(req.url)
+  const year = parseInt(searchParams.get('year'))
+  const month = parseInt(searchParams.get('month'))
+  const day = parseInt(searchParams.get('day'))
 
-    // 組成 ISO 格式字串（保證正確）
-    const dateStr = `${year}-${pad(month)}-${pad(day)}T00:00:00+08:00`;
-    const date = new Date(dateStr);
-
-    if (isNaN(date)) {
-      return res.status(400).json({ error: '無效日期格式' });
-    }
-
-    const heavenlyStems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
-    const earthlyBranches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
-
-    // 年柱（以立春切換）
-    const liChun = new Date(`${year}-02-04T00:00:00+08:00`);
-    const adjustedYear = date < liChun ? year - 1 : parseInt(year);
-    const yearStemIndex = (adjustedYear - 4) % 10;
-    const yearBranchIndex = (adjustedYear - 4) % 12;
-    const yearPillar = heavenlyStems[yearStemIndex] + earthlyBranches[yearBranchIndex];
-
-    // 日柱（以 1900-01-31 為基準）
-    const baseDate = new Date("1900-01-31T00:00:00+08:00");
-    const diffDays = Math.floor((date - baseDate) / (1000 * 60 * 60 * 24));
-    const dayStemIndex = (diffDays + 60) % 10;
-    const dayBranchIndex = (diffDays + 60) % 12;
-    const dayPillar = heavenlyStems[dayStemIndex] + earthlyBranches[dayBranchIndex];
-
-    // 月柱（簡化計算）
-    const monthIndex = (date.getMonth() + 1 + 10) % 12;
-    const monthStemIndex = (yearStemIndex * 2 + monthIndex) % 10;
-    const monthBranchIndex = (monthIndex + 1) % 12;
-    const monthPillar = heavenlyStems[monthStemIndex] + earthlyBranches[monthBranchIndex];
-
-    res.status(200).json({
-      year: yearPillar,
-      month: monthPillar,
-      day: dayPillar
-    });
-
-  } catch (err) {
-    res.status(500).json({ error: '內部錯誤', details: err.message });
+  if (!year || !month || !day) {
+    return NextResponse.json({ error: '缺少 year、month 或 day 參數' }, { status: 400 })
   }
+
+  // 台灣時區處理：以子初（午夜）換日
+  const date = new Date(Date.UTC(year, month - 1, day, 16)) // UTC+8 = +8 小時 = +16:00 前一日 16:00
+  const lunar = toLunar(date)
+
+  // 各柱天干地支
+  const yearGanzhi = lunar.getYearInGanZhi()
+  const monthGanzhi = lunar.getMonthInGanZhi()
+  const dayGanzhi = lunar.getDayInGanZhi()
+
+  // 傳統日柱編號（甲子 = 1）
+  const dayIndex = ganzhi60.indexOf(dayGanzhi)
+  const traditionalDayNumber = dayIndex >= 0 ? dayIndex + 1 : null
+
+  const result = {
+    year: `${yearGanzhi}（${ganzhi60.indexOf(yearGanzhi) + 1}）`,
+    month: `${monthGanzhi}`,
+    day: `${dayGanzhi}（${traditionalDayNumber}）`,
+    full: `年柱: ${yearGanzhi}（${ganzhi60.indexOf(yearGanzhi) + 1}），月柱: ${monthGanzhi}，日柱: ${dayGanzhi}（${traditionalDayNumber}）`
+  }
+
+  return NextResponse.json(result)
 }
