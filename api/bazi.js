@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-// 支援 CommonJS 套件載入
-const lunar = require('lunar-javascript')
+// 使用動態引入 CommonJS 模組方式
+const lunar = await import('lunar-javascript').then(mod => mod.default || mod)
 const ganzhi60 = [
   '甲子', '乙丑', '丙寅', '丁卯', '戊辰', '己巳', '庚午', '辛未', '壬申', '癸酉',
   '甲戌', '乙亥', '丙子', '丁丑', '戊寅', '己卯', '庚辰', '辛巳', '壬午', '癸未',
@@ -11,8 +11,9 @@ const ganzhi60 = [
   '甲寅', '乙卯', '丙辰', '丁巳', '戊午', '己未', '庚申', '辛酉', '壬戌', '癸亥'
 ]
 
+// ✅ 明確指定為 nodejs（非 edge）
 export const config = {
-  runtime: 'nodejs' // 確保使用 Node.js 而非 Edge Runtime
+  runtime: 'nodejs'
 }
 
 export async function GET(req) {
@@ -25,7 +26,8 @@ export async function GET(req) {
     return NextResponse.json({ error: '缺少 year、month 或 day 參數' }, { status: 400 })
   }
 
-  const date = new Date(Date.UTC(year, month - 1, day, 16)) // 台灣時區換日點
+  // 台灣時間 +8 小時換算（UTC 16:00 相當於台灣 00:00）
+  const date = new Date(Date.UTC(year, month - 1, day, 16))
   const lunarDate = lunar.Lunar.fromDate(date)
 
   const yearGanzhi = lunarDate.getYearInGanZhi()
