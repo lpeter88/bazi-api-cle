@@ -1,0 +1,9 @@
+{
+  "name": "bazi-api-cle",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "api/bazi.js",
+  "dependencies": {
+    "lunar-javascript": "^1.6.12"
+  }
+}
