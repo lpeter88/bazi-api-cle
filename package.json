@@ -1,10 +1,29 @@
-{
-  "name": "bazi-api-cle",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "api/bazi.js",
-  "dependencies": {
-    "lunar-javascript": "^1.6.12",
-    "next": "^13.0.0"
+// api/bazi.js
+import { NextResponse } from 'next/server';
+import pkg from 'lunar-javascript';
+const { Lunar } = pkg; // 這是關鍵：用 destructuring 從 CommonJS 模組抓出 Lunar
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const dateStr = searchParams.get('date'); // 格式如 "2025-05-29"
+  const hour = parseInt(searchParams.get('hour'), 10); // 小時整數
+
+  if (!dateStr || isNaN(hour)) {
+    return NextResponse.json({ error: '缺少必要參數' }, { status: 400 });
+  }
+
+  try {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const lunar = Lunar.fromYmdHms(year, month, day, hour, 0, 0);
+
+    const ganZhiDay = lunar.getDayInGanZhi(); // eg: "甲子"
+    const ganZhiIndex = lunar.getDayGanZhiIndex(); // eg: 1 = 甲子
+
+    return NextResponse.json({
+      dayGanZhi: ganZhiDay,
+      ganZhiIndex,
+    });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
