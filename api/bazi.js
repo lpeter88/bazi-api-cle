@@ -12,24 +12,28 @@ const ganZhi60 = [
 
 module.exports = async (req, res) => {
   try {
-    // 解析 query
+    // 解析 query string
     const url = new URL(req.url, `https://${req.headers.host}`);
     const dateStr = url.searchParams.get('date');    // YYYY-MM-DD
-    const hour    = parseInt(url.searchParams.get('hour'), 10); // 小时整型
+    const hour    = parseInt(url.searchParams.get('hour'), 10); // 小时
 
     if (!dateStr || isNaN(hour)) {
       return res.status(400).json({ error: '缺少 date 或 hour 参数' });
     }
 
     const [year, month, day] = dateStr.split('-').map(Number);
-    // 以台湾时区子初（UTC 16:00）换日
+    // 使用子初换日逻辑：台湾时区 UTC+8，即 UTC 当日 16:00
     const date = new Date(Date.UTC(year, month - 1, day, hour));
     const lunarDate = Lunar.fromDate(date);
 
-    const dayGanZhi = lunarDate.getDayInGanZhi();          // e.g. "乙未"
-    const idx = ganZhi60.indexOf(dayGanZhi);
-    const ganZhiIndex = idx >= 0 ? idx + 1 : null;         // 1–60
+    // 获取日柱干支
+    const dayGanZhi = lunarDate.getDayInGanZhi();    // e.g. "乙未"
 
+    // 用 ganZhi60 数组查索引，+1 得到传统编号（甲子=1）
+    const idx = ganZhi60.indexOf(dayGanZhi);
+    const ganZhiIndex = idx >= 0 ? idx + 1 : null;   // 1–60
+
+    // 返回结果
     return res.status(200).json({
       dayGanZhi,
       ganZhiIndex
