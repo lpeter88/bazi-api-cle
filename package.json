@@ -4,6 +4,7 @@
   "type": "module",
   "main": "api/bazi.js",
   "dependencies": {
-    "lunar-javascript": "^1.6.12"
+    "lunar-javascript": "^1.6.12",
+    "next": "^13.0.0"
   }
 }
