@@ -1,12 +1,17 @@
 // api/bazi.js
+
+export const config = {
+  runtime: 'nodejs',
+};
+
 import { NextResponse } from 'next/server';
 import pkg from 'lunar-javascript';
-const { Lunar } = pkg; // 這是關鍵：用 destructuring 從 CommonJS 模組抓出 Lunar
+const { Lunar } = pkg;
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const dateStr = searchParams.get('date'); // 格式如 "2025-05-29"
-  const hour = parseInt(searchParams.get('hour'), 10); // 小時整數
+  const dateStr = searchParams.get('date');
+  const hour = parseInt(searchParams.get('hour'), 10);
 
   if (!dateStr || isNaN(hour)) {
     return NextResponse.json({ error: '缺少必要參數' }, { status: 400 });
@@ -16,8 +21,8 @@ export async function GET(request) {
     const [year, month, day] = dateStr.split('-').map(Number);
     const lunar = Lunar.fromYmdHms(year, month, day, hour, 0, 0);
 
-    const ganZhiDay = lunar.getDayInGanZhi(); // eg: "甲子"
-    const ganZhiIndex = lunar.getDayGanZhiIndex(); // eg: 1 = 甲子
+    const ganZhiDay = lunar.getDayInGanZhi();
+    const ganZhiIndex = lunar.getDayGanZhiIndex();
 
     return NextResponse.json({
       dayGanZhi: ganZhiDay,
